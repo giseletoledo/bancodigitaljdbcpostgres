@@ -15,75 +15,35 @@ import org.springframework.stereotype.Repository;
 public class ClienteDAO {
 
     public void criarCliente(Cliente cliente) throws SQLException {
-    	 String sqlCliente = "INSERT INTO clientes (nome, cpf, data_nascimento, tipo_cliente) VALUES (?, ?, ?, ?)";
-         String sqlEndereco = "INSERT INTO enderecos (cliente_id, rua, numero, complemento, cidade, estado, cep) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection connection = DatabaseConfig.conectar();
-                PreparedStatement stmtCliente = connection.prepareStatement(sqlCliente, Statement.RETURN_GENERATED_KEYS);
-                PreparedStatement stmtEndereco = connection.prepareStatement(sqlEndereco)) {
-
-               // Inserir cliente
-               stmtCliente.setString(1, cliente.getNome());
-               stmtCliente.setString(2, cliente.getCpf());
-               stmtCliente.setDate(3, Date.valueOf(cliente.getDataNascimento()));
-               stmtCliente.setString(4, cliente.getTipo().name());
-               stmtCliente.executeUpdate();
-
-               // Obter ID gerado do cliente
-               ResultSet generatedKeys = stmtCliente.getGeneratedKeys();
-               if (generatedKeys.next()) {
-                   long clienteId = generatedKeys.getLong(1);
-
-                   // Inserir endereço
-                   if (cliente.getEndereco() != null) {
-                       stmtEndereco.setLong(1, clienteId);
-                       stmtEndereco.setString(2, cliente.getEndereco().getRua());
-                       stmtEndereco.setString(3, cliente.getEndereco().getNumero());
-                       stmtEndereco.setString(4, cliente.getEndereco().getComplemento());
-                       stmtEndereco.setString(5, cliente.getEndereco().getCidade());
-                       stmtEndereco.setString(6, cliente.getEndereco().getEstado());
-                       stmtEndereco.setString(7, cliente.getEndereco().getCep());
-                       stmtEndereco.executeUpdate();
-                   }
-               }
-           }
-    }
-
-    public Cliente buscarClientePorId(Long id) throws SQLException {
-    	String sql = """
-    		    SELECT c.id AS cliente_id, c.nome, c.cpf, c.data_nascimento, c.tipo_cliente,
-    		           e.id AS endereco_id, e.cliente_id AS endereco_cliente_id,
-    		           e.rua, e.numero, e.complemento, e.cidade, e.estado, e.cep
-    		    FROM clientes c
-    		    LEFT JOIN enderecos e ON c.id = e.cliente_id
-    		    WHERE c.id = ?
-    		""";
+        String sql = "SELECT criar_cliente(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConfig.conectar();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
 
-            stmt.setLong(1, id);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return mapearCliente(rs);
+            if (cliente.getEndereco() == null) {
+                throw new SQLException("Endereço é obrigatório para criar um cliente");
             }
+
+            Endereco endereco = cliente.getEndereco();
+
+            stmt.setString(1, cliente.getNome());
+            stmt.setString(2, cliente.getCpf());
+            stmt.setDate(3, Date.valueOf(cliente.getDataNascimento()));
+            stmt.setString(4, cliente.getTipo().name());
+            stmt.setString(5, endereco.getRua());
+            stmt.setString(6, endereco.getNumero());
+            stmt.setString(7, endereco.getComplemento());
+            stmt.setString(8, endereco.getCidade());
+            stmt.setString(9, endereco.getEstado());
+            stmt.setString(10, endereco.getCep());
+
+            // Apenas executa - não precisa do ResultSet
+            stmt.execute();
         }
-        return null;
     }
 
-
     public List<Cliente> listarClientes() throws SQLException {
-     
-        String sql = """
-        	    SELECT c.id AS cliente_id, c.nome, c.cpf, c.data_nascimento, c.tipo_cliente,
-        	           e.id AS endereco_id, e.cliente_id AS endereco_cliente_id,
-        	           e.rua, e.numero, e.complemento, e.cidade, e.estado, e.cep
-        	    FROM clientes c
-        	    LEFT JOIN enderecos e ON c.id = e.cliente_id
-        	""";
-
-
+        String sql = "SELECT * FROM listar_todos_clientes()";
         List<Cliente> clientes = new ArrayList<>();
 
         try (Connection connection = DatabaseConfig.conectar();
@@ -91,52 +51,49 @@ public class ClienteDAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                Cliente cliente = mapearCliente(rs);
-                clientes.add(cliente);
+                clientes.add(mapearCliente(rs));
             }
         }
         return clientes;
     }
 
-
     public void atualizarCliente(Cliente cliente) throws SQLException {
-        String sqlCliente = "UPDATE clientes SET nome = ?, data_nascimento = ?, tipo_cliente = ? WHERE id = ?";
-        String sqlEndereco = "UPDATE enderecos SET rua = ?, numero = ?, complemento = ?, cidade = ?, estado = ?, cep = ? WHERE cliente_id = ?";
+        String sql = "SELECT atualizar_cliente(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConfig.conectar();
-             PreparedStatement stmtCliente = connection.prepareStatement(sqlCliente);
-             PreparedStatement stmtEndereco = connection.prepareStatement(sqlEndereco)) {
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
 
-            // Atualizar a tabela clientes
-            stmtCliente.setString(1, cliente.getNome());
-            stmtCliente.setDate(2, Date.valueOf(cliente.getDataNascimento()));
-            stmtCliente.setString(3, cliente.getTipo().name());
-            stmtCliente.setLong(4, cliente.getId());
-            stmtCliente.executeUpdate();
-
-            // Atualizar a tabela enderecos, se houver endereço
-            if (cliente.getEndereco() != null) {
-                stmtEndereco.setString(1, cliente.getEndereco().getRua());
-                stmtEndereco.setString(2, cliente.getEndereco().getNumero());
-                stmtEndereco.setString(3, cliente.getEndereco().getComplemento());
-                stmtEndereco.setString(4, cliente.getEndereco().getCidade());
-                stmtEndereco.setString(5, cliente.getEndereco().getEstado());
-                stmtEndereco.setString(6, cliente.getEndereco().getCep());
-                stmtEndereco.setLong(7, cliente.getId());
-                stmtEndereco.executeUpdate();
+            // Verificar endereço obrigatório
+            if (cliente.getEndereco() == null) {
+                throw new SQLException("Endereço é obrigatório");
             }
+
+            Endereco endereco = cliente.getEndereco();
+
+            // Setar parâmetros
+            stmt.setLong(1, cliente.getId());
+            stmt.setString(2, cliente.getNome());
+            stmt.setDate(3, Date.valueOf(cliente.getDataNascimento()));
+            stmt.setString(4, cliente.getTipo().name());
+            stmt.setString(5, endereco.getRua());
+            stmt.setString(6, endereco.getNumero());
+            stmt.setString(7, endereco.getComplemento());
+            stmt.setString(8, endereco.getCidade());
+            stmt.setString(9, endereco.getEstado());
+            stmt.setString(10, endereco.getCep());
+
+            stmt.executeQuery();
         }
     }
 
-
     public void deletarCliente(Long id) throws SQLException {
-        String sql = "DELETE FROM clientes WHERE id = ?";
+        String sql = "SELECT deletar_cliente(?)";
 
         try (Connection connection = DatabaseConfig.conectar();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setLong(1, id);
-            stmt.executeUpdate();
+            stmt.executeQuery();
         }
     }
     
