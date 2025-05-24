@@ -1,6 +1,7 @@
 package com.bancodigitalspring.dao;
 
 import com.bancodigitalspring.config.DatabaseConfig;
+import com.bancodigitalspring.mapper.ClienteMapper;
 import com.bancodigitalspring.mapper.ClienteMapperDB;
 import com.bancodigitalspring.model.Cliente;
 import com.bancodigitalspring.model.Endereco;
@@ -11,8 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
-
-import static com.bancodigitalspring.mapper.ClienteMapperDB.mapearCliente;
 
 @Repository
 public class ClienteDAO {
@@ -57,7 +56,7 @@ public class ClienteDAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return mapearCliente(rs);
+                    return ClienteMapperDB.mapearCliente(rs);
                 } else {
                     return null;
                 }
@@ -82,7 +81,7 @@ public class ClienteDAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                Cliente cliente = mapearCliente(rs);
+                Cliente cliente = ClienteMapperDB.mapearCliente(rs);
                 clientes.add(cliente);
             }
         }
