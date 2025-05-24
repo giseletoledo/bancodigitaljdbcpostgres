@@ -1,5 +1,8 @@
 package com.bancodigitalspring.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -9,6 +12,7 @@ public class DatabaseConfig {
     private static final String URL = "jdbc:postgresql://localhost:5432/bancodigital";
     private static final String USER = "postgres_user"; // usuário padrão do PostgreSQL
     private static final String PASSWORD = "banco123"; // altere para sua senha
+    private static final Logger log = LoggerFactory.getLogger(DatabaseConfig.class);
 
     public static Connection conectar() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
@@ -98,10 +102,10 @@ public class DatabaseConfig {
                         );
                     """);
 
-
-            System.out.println("Tabelas criadas com sucesso!");
+            //System.out.println("Tabelas criadas com sucesso!");
+            log.info("Tabelas criadas com sucesso!");
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             throw new RuntimeException("Erro ao criar tabelas no banco de dados.");
         }
     }

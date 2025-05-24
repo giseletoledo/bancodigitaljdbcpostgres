@@ -1,6 +1,7 @@
 package com.bancodigitalspring.dao;
 
 import com.bancodigitalspring.config.DatabaseConfig;
+import com.bancodigitalspring.mapper.ClienteMapperDB;
 import com.bancodigitalspring.model.Cliente;
 import com.bancodigitalspring.model.Endereco;
 import com.bancodigitalspring.model.TipoCliente;
@@ -10,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
+
+import static com.bancodigitalspring.mapper.ClienteMapperDB.mapearCliente;
 
 @Repository
 public class ClienteDAO {
@@ -42,8 +45,36 @@ public class ClienteDAO {
         }
     }
 
+    public Cliente buscarClientePorId(Long id) throws SQLException {
+        String sql = "SELECT cliente_id, nome, cpf, data_nascimento, tipo_cliente, " +
+                "endereco_id, rua, numero, complemento, cidade, estado, cep " +
+                "FROM buscar_cliente_por_id(?)";
+
+        try (Connection connection = DatabaseConfig.conectar();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapearCliente(rs);
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
     public List<Cliente> listarClientes() throws SQLException {
-        String sql = "SELECT * FROM listar_todos_clientes()";
+
+        String sql = """
+        	    SELECT c.id AS cliente_id, c.nome, c.cpf, c.data_nascimento, c.tipo_cliente,
+        	           e.id AS endereco_id, e.cliente_id AS endereco_cliente_id,
+        	           e.rua, e.numero, e.complemento, e.cidade, e.estado, e.cep
+        	    FROM clientes c
+        	    LEFT JOIN enderecos e ON c.id = e.cliente_id
+        	""";
+
         List<Cliente> clientes = new ArrayList<>();
 
         try (Connection connection = DatabaseConfig.conectar();
@@ -51,7 +82,8 @@ public class ClienteDAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                clientes.add(mapearCliente(rs));
+                Cliente cliente = mapearCliente(rs);
+                clientes.add(cliente);
             }
         }
         return clientes;
@@ -96,33 +128,4 @@ public class ClienteDAO {
             stmt.executeQuery();
         }
     }
-    
-    private Cliente mapearCliente(ResultSet rs) throws SQLException {
-        Cliente cliente = new Cliente();
-        cliente.setId(rs.getLong("cliente_id")); // Assumindo alias: clientes.id AS cliente_id
-        cliente.setNome(rs.getString("nome"));
-        cliente.setCpf(rs.getString("cpf"));
-        cliente.setDataNascimento(rs.getDate("data_nascimento").toLocalDate());
-        cliente.setTipo(TipoCliente.valueOf(rs.getString("tipo_cliente")));
-
-        // Verifica se há endereço associado (assumindo alias: enderecos.id AS endereco_id)
-        Long enderecoId = rs.getLong("endereco_id");
-        if (!rs.wasNull()) {
-            Endereco endereco = new Endereco(
-                    rs.getString("rua"),
-                    rs.getString("numero"),
-                    rs.getString("complemento"),
-                    rs.getString("cidade"),
-                    rs.getString("estado"),
-                    rs.getString("cep")
-            );
-            endereco.setId(enderecoId);
-            endereco.setClienteId(cliente.getId());
-
-            cliente.setEndereco(endereco);
-        }
-
-        return cliente;
-    }
-
 }
