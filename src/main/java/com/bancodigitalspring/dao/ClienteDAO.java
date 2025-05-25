@@ -1,11 +1,9 @@
 package com.bancodigitalspring.dao;
 
 import com.bancodigitalspring.config.DatabaseConfig;
-import com.bancodigitalspring.mapper.ClienteMapper;
 import com.bancodigitalspring.mapper.ClienteMapperDB;
 import com.bancodigitalspring.model.Cliente;
 import com.bancodigitalspring.model.Endereco;
-import com.bancodigitalspring.model.TipoCliente;
 
 import java.sql.*;
 import java.util.ArrayList;
