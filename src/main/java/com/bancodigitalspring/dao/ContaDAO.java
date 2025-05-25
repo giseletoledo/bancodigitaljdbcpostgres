@@ -61,7 +61,8 @@ public class ContaDAO {
     }
 
     public Conta buscarContaPorId(Long id) {
-        String sql = "SELECT * FROM contas WHERE id = ?";
+        String sql = "SELECT id, numero_conta, cliente_id, saldo, tipo_conta, chave_pix, limite_especial FROM buscar_conta_por_id(?)";
+
         logger.debug("Buscando conta por ID: {}", id);
 
         try (Connection connection = DatabaseConfig.conectar();
