@@ -12,14 +12,12 @@ import com.bancodigitalspring.model.Conta;
 import com.bancodigitalspring.model.TipoTransacao;
 import com.bancodigitalspring.model.Transacao;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.bancodigitalspring.exception.BancoDadosException;
 import com.bancodigitalspring.exception.ChavePixNaoEncontradaException;
 import com.bancodigitalspring.exception.ContaNaoEncontradaException;
-
 
 @Repository
 public class ContaDAO {
@@ -53,7 +51,7 @@ public class ContaDAO {
         }
     }
 
-    public  Conta buscarContaPorId(Long id) {
+    public Conta buscarContaPorId(Long id) {
         String sql = "SELECT id, numero_conta, cliente_id, saldo, tipo_conta, chave_pix, limite_especial FROM buscar_conta_por_id(?)";
 
         logger.debug("Buscando conta por ID: {}", id);
@@ -79,7 +77,10 @@ public class ContaDAO {
 
     public List<Conta> buscarContasPorClienteId(Long clienteId) {
         List<Conta> contas = new ArrayList<>();
-        String sql = "SELECT * FROM contas WHERE cliente_id = ?";
+        String sql = """
+                    SELECT id, numero_conta, cliente_id, saldo, tipo_conta, chave_pix, limite_especial
+                    FROM buscar_contas_por_cliente_id(?)
+                """;
         logger.debug("Buscando contas para cliente ID: {}", clienteId);
 
         try (Connection connection = DatabaseConfig.conectar();
@@ -149,7 +150,7 @@ public class ContaDAO {
     }
 
     private void salvarTransacao(Connection connection, Transacao t, Long contaId) throws SQLException {
-        String sql = "INSERT INTO transacoes (conta_id, valor, tipo_transacao, descricao) VALUES (?, ?, ?, ?)";
+        String sql = "SELECT salvar_transacao(?, ?, ?, ?)";
         logger.trace("Salvando transação para conta ID: {}", contaId);
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -157,13 +158,28 @@ public class ContaDAO {
             stmt.setBigDecimal(2, t.getValor());
             stmt.setString(3, t.getTipo().name());
             stmt.setString(4, t.getDescricao());
-            stmt.executeUpdate();
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    t.setId(rs.getLong(1));  // Recupera o ID retornado pela function
+                    logger.debug("Transação salva com ID: {}", t.getId());
+                }
+            }
         }
     }
 
     public List<Transacao> buscarTransacoesPorContaId(Long contaId, Connection connection) {
         List<Transacao> transacoes = new ArrayList<>();
-        String sql = "SELECT * FROM transacoes WHERE conta_id = ? ORDER BY data_transacao";
+        String sql = """
+                SELECT
+                    id,
+                    conta_id,
+                    valor,
+                    tipo_transacao,
+                    descricao,
+                    data_transacao
+                FROM buscar_transacoes_por_conta_id(?)
+                """;
         logger.debug("Buscando transações para conta ID: {}", contaId);
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -176,6 +192,9 @@ public class ContaDAO {
                             rs.getBigDecimal("valor"),
                             TipoTransacao.valueOf(rs.getString("tipo_transacao"))
                     );
+
+                    // Impedir o ID nulo
+                    transacao.setId(rs.getLong("id"));
 
                     Timestamp data = rs.getTimestamp("data_transacao");
                     if (data != null) {
