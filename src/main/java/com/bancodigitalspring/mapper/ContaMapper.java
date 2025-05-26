@@ -25,7 +25,8 @@ public class ContaMapper {
             conta.getCliente().getId(),
             conta.getChavePix(),
             conta.getTipoConta(),
-            conta.getLimiteEspecial()
+            conta.getLimiteEspecial(),
+            conta.getSaldo()
         );
     }
 
