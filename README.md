@@ -2,6 +2,10 @@
 
 API para gestão de clientes, contas bancárias e cartões com regras de negócio específicas.
 
+<img width="80%" src="https://raw.githubusercontent.com/giseletoledo/bancodigitaljdbcpostgres/refs/heads/main/imagens_projeto/postman_bd_delete.png" alt="Tela que lista os pokémons">
+
+
+
 ## 📋 Funcionalidades
 - **Cadastro de clientes** com validação de CPF, nome e idade
 - **Gestão de contas** (Corrente e Poupança) com taxas diferenciadas por tipo de cliente
@@ -23,3 +27,4 @@ erDiagram
     CONTA ||--o{ TRANSACAO : realiza
     CONTA ||--o{ CARTAO : possui
     CARTAO ||--o{ CARTAO_TRANSACAO : contém
+
