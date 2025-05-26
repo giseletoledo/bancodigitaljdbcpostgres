@@ -3,16 +3,11 @@ package com.bancodigitalspring.controller;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 
+import com.bancodigitalspring.exception.ContaNaoEncontradaException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.bancodigitalspring.dto.ContaDTO;
 import com.bancodigitalspring.dto.DepositoDTO;
@@ -52,7 +47,6 @@ public class ContaController {
         String extrato = contaService.gerarExtrato(id);
         return ResponseEntity.ok(extrato);
     }
-    
 
     @GetMapping("/clientes/{id}/extratos")
     public ResponseEntity<String> extratosCliente(@PathVariable Long id) throws SQLException {
@@ -66,14 +60,12 @@ public class ContaController {
         return ResponseEntity.ok().build();
     }
 
-
     // POST /contas/{id}/saque - Realizar saque
     @PostMapping("/{id}/saque")
     public ResponseEntity<Void> sacar(@PathVariable Long id, @RequestBody ValorRequest request) throws SQLException {
         contaService.sacar(id, request.valor());
         return ResponseEntity.ok().build();
     }
-
 
     // POST /contas/{id}/transferencia - Transferência para outra conta
     @PostMapping("/{id}/transferencia")
@@ -102,5 +94,12 @@ public class ContaController {
     public ResponseEntity<Void> aplicarRendimento(@PathVariable Long id) throws SQLException {
         contaService.aplicarRendimento(id);
         return ResponseEntity.ok().build();
+    }
+
+    // DELETE /contas/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarConta(@PathVariable Long id) throws SQLException {
+        contaService.deletarConta(id); // Todas as exceções são tratadas pelo GlobalExceptionHandler
+        return ResponseEntity.noContent().build();
     }
 }
