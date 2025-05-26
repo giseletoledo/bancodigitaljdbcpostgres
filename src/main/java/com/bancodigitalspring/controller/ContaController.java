@@ -2,8 +2,11 @@ package com.bancodigitalspring.controller;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.List;
 
+import com.bancodigitalspring.exception.BancoDadosException;
 import com.bancodigitalspring.exception.ContaNaoEncontradaException;
+import com.bancodigitalspring.model.Conta;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +49,16 @@ public class ContaController {
     public ResponseEntity<String> gerarExtrato(@PathVariable Long id) throws SQLException {
         String extrato = contaService.gerarExtrato(id);
         return ResponseEntity.ok(extrato);
+    }
+
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<Conta>> buscarContasPorClienteId(@PathVariable Long clienteId) {
+        try {
+            List<Conta> contas = contaService.buscarContasPorClienteId(clienteId);
+            return ResponseEntity.ok(contas);
+        } catch (BancoDadosException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/clientes/{id}/extratos")
