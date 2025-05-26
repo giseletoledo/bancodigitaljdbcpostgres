@@ -12,7 +12,6 @@ import com.bancodigitalspring.model.Conta;
 import com.bancodigitalspring.model.TipoTransacao;
 import com.bancodigitalspring.model.Transacao;
 
-import java.sql.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +19,7 @@ import org.slf4j.LoggerFactory;
 import com.bancodigitalspring.exception.BancoDadosException;
 import com.bancodigitalspring.exception.ChavePixNaoEncontradaException;
 import com.bancodigitalspring.exception.ContaNaoEncontradaException;
-import com.bancodigitalspring.mapper.ContaMapper;
-import com.bancodigitalspring.model.Conta;
-import com.bancodigitalspring.model.TipoTransacao;
-import com.bancodigitalspring.model.Transacao;
+
 
 @Repository
 public class ContaDAO {
@@ -31,12 +27,12 @@ public class ContaDAO {
     private static final Logger logger = LoggerFactory.getLogger(ContaDAO.class);
 
     public void criarConta(Conta conta) {
-        String sql = "INSERT INTO contas (cliente_id, saldo, tipo_conta, chave_pix, numero_conta, limite_especial) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "SELECT criar_conta(?, ?, ?, ?, ?, ?)";
 
         logger.debug("Tentando criar conta para cliente ID: {}", conta.getCliente().getId());
 
         try (Connection connection = DatabaseConfig.conectar();
-             PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setLong(1, conta.getCliente().getId());
             stmt.setBigDecimal(2, conta.getSaldo());
@@ -45,10 +41,7 @@ public class ContaDAO {
             stmt.setString(5, conta.getNumero());
             stmt.setBigDecimal(6, conta.getLimiteEspecial());
 
-            int affectedRows = stmt.executeUpdate();
-            logger.debug("Conta criada, linhas afetadas: {}", affectedRows);
-
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     conta.setId(rs.getLong(1));
                     logger.info("Nova conta criada com ID: {}", conta.getId());
@@ -60,7 +53,7 @@ public class ContaDAO {
         }
     }
 
-    public Conta buscarContaPorId(Long id) {
+    public  Conta buscarContaPorId(Long id) {
         String sql = "SELECT id, numero_conta, cliente_id, saldo, tipo_conta, chave_pix, limite_especial FROM buscar_conta_por_id(?)";
 
         logger.debug("Buscando conta por ID: {}", id);
@@ -198,5 +191,18 @@ public class ContaDAO {
             throw new BancoDadosException("Falha ao buscar transações", e);
         }
         return transacoes;
+    }
+
+    public boolean deletarConta(Long contaId) throws SQLException {
+        String sql = "SELECT deletar_conta(?)";
+
+        try (Connection connection = DatabaseConfig.conectar();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, contaId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
     }
 }
