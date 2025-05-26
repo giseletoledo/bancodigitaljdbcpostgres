@@ -164,4 +164,12 @@ public class ContaService {
             throw new RegraNegocioException("Conta com transações pendentes");
         }
     }
+
+    public List<Conta> buscarContasPorClienteId(Long clienteId) {
+        if (clienteId == null || clienteId <= 0) {
+            throw new IllegalArgumentException("ID de cliente inválido.");
+        }
+
+        return contaDAO.buscarContasPorClienteId(clienteId);
+    }
 }
