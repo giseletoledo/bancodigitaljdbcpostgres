@@ -8,5 +8,6 @@ public record ContaDTO(
 	    Long clienteId,
 	    String chavePix,
 	    String tipo,
-	    BigDecimal limiteEspecial
-	) {}
+	    BigDecimal limiteEspecial,
+		BigDecimal saldo
+) {}
