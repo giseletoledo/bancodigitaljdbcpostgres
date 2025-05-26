@@ -16,7 +16,6 @@ public class Transacao {
             this.tipo = tipo;
             this.data = LocalDateTime.now();
         }
-    
 
         public BigDecimal getValor() {
             return valor;

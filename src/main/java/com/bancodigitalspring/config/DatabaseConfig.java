@@ -61,7 +61,6 @@ public class DatabaseConfig {
                         );
                     """);
 
-
             // Criar a tabela Cartões
             stmt.execute("""
                         CREATE TABLE IF NOT EXISTS cartoes (
